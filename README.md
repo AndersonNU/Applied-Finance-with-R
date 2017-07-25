@@ -1,4 +1,4 @@
-# Applied-Finance-with-R
+# Applied Finance with R
 Course I took in datacamp.com
 
 I explore to add and develop some financial projects using R. 
