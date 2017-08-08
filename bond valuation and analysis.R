@@ -85,6 +85,8 @@ plot(prc_yld,prc_yld$price,
      col = "blue",
      main = "Price/YTM Relationship")
 
+#=========================================================================================
+# Plot 10-Year US Treasury Yields
 # Load quantmod package
 library(quantmod)
 library(xts)
@@ -93,6 +95,7 @@ library(zoo)
 t10yr <- getSymbols(Symbols = "DGS10", src = "FRED", auto.assign = FALSE)
 #t10yr
 # Subset data
+head(t10yr)
 t10yr <- subset(t10yr["2006-01-01/2016-09-30"] )
 
 # Plot yields
@@ -103,3 +106,27 @@ plot(x = index(t10yr),
      type = "l",
      col = "red",
      main = "10-Year US Treasury Yields")
+
+
+# =======================================================================================
+# Plot Aaa - Baa spread. Data source (Moody Yield)
+# Examine first and last six elements in spread
+spread_aaa <- Quandl("MOODY/DAAAYLD")
+spread_aaa <- subset(spread_aaa, spread_aaa$DATE>"1986-01-03" & spread_aaa$DATE <"2017-08-03")
+spread_baa <- Quandl("MOODY/DBAAYLD")
+spread_baa <- subset(spread_baa, spread_baa$DATE>"1986-01-03" & spread_baa$DATE <"2017-08-03")
+spread <- merge(spread_aaa, spread_baa, by="DATE")
+head(spread)
+tail(spread)
+
+# Calculate spread$diff
+spread$diff <- (spread$DBAA - spread$DAAA)*100
+
+# Plot spread
+plot(x = spread$DATE,
+     y = spread$diff,
+     type = "l",
+     xlab = "Date",
+     ylab = "Spread (bps)",
+     col = "red",
+     main = "Aaa - Baa Spread")
