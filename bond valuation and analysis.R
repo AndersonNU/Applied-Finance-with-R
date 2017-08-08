@@ -109,7 +109,7 @@ plot(x = index(t10yr),
 
 
 # =======================================================================================
-# Plot Aaa - Baa spread. Data source (Moody Yield)
+# Ploting investing grade yield: Aaa - Baa spread. Data source (Moody Yield)
 # Examine first and last six elements in spread
 spread_aaa <- Quandl("MOODY/DAAAYLD")
 spread_aaa <- subset(spread_aaa, spread_aaa$DATE>"1986-01-03" & spread_aaa$DATE <"2017-08-03")
@@ -130,3 +130,167 @@ plot(x = spread$DATE,
      ylab = "Spread (bps)",
      col = "red",
      main = "Aaa - Baa Spread")
+
+#========================================================================================
+# Find a bond's yield
+# Value bond using 5% yield
+bondprc(p = 100, r = 0.05, ttm = 5, y = 0.05)
+
+# Value bond using 7% yield
+bondprc(p = 100, r = 0.05, ttm = 5, y = 0.07)
+
+# Value bond using 6% yield
+bondprc(p = 100, r = 0.05, ttm = 5, y = 0.06)
+
+# Using uniroot function to find YTM
+# Create cash flow vector
+cf <- c(-95.79, 5,5,5,5,105)
+
+# Create bond valuation function
+bval <- function(i, cf,
+                 t=seq(along = cf))
+  sum(cf / (1 + i)^t)
+
+# Create ytm() function using uniroot
+ytm <- function(cf) {
+  uniroot(bval, c(0, 1), cf = cf)$root
+}
+
+# Use ytm() function to find yield
+ytm(cf)
+
+
+# Calculate the PV01
+PV01 <- abs(bondprc(100,0.1,20,0.1001) - bondprc(100,0.1,20,0.1000))
+PV01
+
+#================================================================================
+# Calculate approximate duration for a bond
+# Calculate bond price today
+px <- bondprc(p = 100, r = 0.1, ttm = 20, y = 0.1)
+px
+
+# Calculate bond price if yields increase by 1%
+px_up <- bondprc(p = 100, r = 0.1, ttm = 20, y = 0.11)
+px_up
+
+# Calculate bond price if yields decrease by 1%
+px_down <- bondprc(p = 100, r = 0.1, ttm = 20, y = 0.09)
+px_down
+
+# Calculate approximate duration
+duration <- (px_down - px_up) / (2* px * 0.01)
+duration
+
+
+# Estimating effect on bond price using duration
+# Estimate percentage change
+duration_pct_change <- -duration * (-0.01)
+duration_pct_change
+
+# Estimate dollar change
+duration_dollar_change <- px*duration_pct_change
+duration_dollar_change
+
+#==================================================================================
+# Calculate approximate convexity for a bond
+# Calculate approximate convexity
+convexity <- (px_down + px_up - 2 * px) / (px * (0.01)^2)
+convexity
+
+# Estimate percentage change
+convexity_pct_change <- 0.5 * convexity * (0.01)^2
+convexity_pct_change
+
+# Estimate dollar change
+convexity_dollar_change <- convexity_pct_change * px 
+convexity_dollar_change
+
+# Estimating the bond price using duration and convexity
+# Estimate change in price
+price_change <- duration_dollar_change + convexity_dollar_change
+
+# Estimate price
+price <- duration_dollar_change + convexity_dollar_change + px
+
+#==================================================================================
+# In this comprehensive example, you will value a bond with a $100 par value, 
+# 3% coupon rate, and 8 years to maturity. This bond was rated Aaa by Moody's 
+# and it was issued on September 30, 2016. You have determined that this bond's 
+# yield is comparable to the yield of bonds with a Aaa rating.
+
+# Load Quandl package
+library(Quandl)
+
+# Obtain Moody's Aaa yield
+aaa <- Quandl("MOODY/DAAAYLD")
+
+# identify yield on September 30, 2016
+aaa_yield <- subset(aaa, aaa$DATE == "2016-09-30")
+
+# Convert yield into decimals
+aaa_yield <- as.numeric(aaa_yield$VALUE)*0.01
+aaa_yield
+
+# Layout the bond's cash flows
+cf <- c(3,3,3,3,3,3,3,103)
+
+# Convert to data.frame
+cf <- data.frame(cf)
+
+# Add time indicator
+cf$t <- seq(1, 8, 1)
+
+# Calculate PV factor
+cf$pv_factor <- 1 / (1 + aaa_yield)^cf$t
+
+# Calculate PV
+cf$pv <- cf$cf * cf$pv_factor
+
+# Price bond
+sum(cf$pv)
+
+# Code cash flow function
+alt_cf <- function(r, p, ttm) {
+  c(rep(p * r, ttm - 1), p * (1 + r))
+}
+
+# Generate cf vector
+alt_cf(r = 0.03, p = 100, ttm = 8)
+
+# Calculate bond price when yield increases
+
+px_up <- bondprc(p = 100, r =0.03, ttm = 8, y = aaa_yield + 0.01)
+
+# Calculate bond price when yield decreases
+px_down <- bondprc(p = 100, r =0.03, ttm = 8, y = aaa_yield - 0.01)
+
+# Calculate duration
+duration <- (px_down - px_up) / (2 * px* 0.01)
+
+# Calculate percentage effect of duration on price
+duration_pct_change <- -duration * 0.01
+duration_pct_change
+
+# Calculate dollar effect of duration on price
+duration_dollar_change <- duration_pct_change * px
+duration_dollar_change
+
+# Calculate convexity measure
+convexity <- (px_up + px_down - 2*px)/(px * (0.01)^2)
+
+# Calculate percentage effect of convexity on price
+convexity_pct_change <- convexity * 0.5* (0.01)^2
+convexity_pct_change
+
+# Calculate dollar effect of convexity on price
+convexity_dollar_change <- convexity_pct_change * px
+convexity_dollar_change
+
+# Estimate price_change
+price_change <- duration_dollar_change + convexity_dollar_change
+price_change
+
+# Estimate new_price
+new_price <- price_change + px
+new_price
